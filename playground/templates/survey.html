@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EV Charger Filter - Unicharge</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f4f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .form-container {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    h2 {
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin: 0.5rem 0 0.2rem;
+    }
+    input, select {
+      width: 100%;
+      padding: 0.6rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    button {
+      width: 100%;
+      padding: 0.7rem;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="form-container">
+    <h2>Find Nearby EV Chargers</h2>
+    <form action="/home" method="GET">
+      <label for="vehicleType">Vehicle Type:</label>
+      <select id="vehicleType" name="vehicleType" required>
+        <option value="2W">2-Wheeler</option>
+        <option value="3W">3-Wheeler</option>
+        <option value="4W">4-Wheeler</option>
+      </select>
+
+      <label for="connector">Connector Type:</label>
+      <select id="connector" name="connector" required>
+        <option value="BEVC AC 001">BEVC AC 001</option>
+        <option value="BEVC DC 001">BEVC DC 001</option>
+        <option value="CCS2">CCS2</option>
+        <option value="CHAdeMO">CHAdeMO</option>
+      </select>
+
+      <label for="powerType">Power Type:</label>
+      <select id="powerType" name="powerType" required>
+        <option value="AC">AC</option>
+        <option value="DC">DC</option>
+      </select>
+
+      <label for="chargingSpeed">Min Charging Speed (kW):</label>
+      <input type="number" id="chargingSpeed" name="chargingSpeed" placeholder="e.g., 10" required />
+
+
+      <label for="range">Range (km):</label>
+      <input type="number" id="range" name="range" placeholder="e.g., 5" required />
+
+      <button type="submit">Find Chargers</button>
+    </form>
+  </div>
+
+</body>
+</html>

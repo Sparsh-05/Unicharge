@@ -6,11 +6,10 @@
     <title>{% block title %}{% endblock title %}| Uni Charge</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <style>
-      /* Ensure the map container has a defined height */
       #map {
-        height: 500px; /* Adjust height as needed */
+        height: 500px;
         width: 100%;
-        margin-top: 20px; /* Add some spacing */
+        margin-top: 20px;
       }
     </style>
   </head>
@@ -19,26 +18,18 @@
     <nav class="navbar navbar-expand-lg bg-body-tertiary">
       <div class="container-fluid">
         <a class="navbar-brand" href="#">Uni Charge</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav">
-            <li class="nav-item">
-              <a class="nav-link active" aria-current="page" href="#">Home</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">Login/Signup</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link active" aria-current="page" href="/about">About us</a>
-            </li>
+            <li class="nav-item"><a class="nav-link active" href="#">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Login/Signup</a></li>
+            <li class="nav-item"><a class="nav-link active" href="/about">About us</a></li>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                Select State
-              </a>
+              <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Select State</a>
               <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="/delhi">Delhi</a></li>
+                <li><a class="dropdown-item" href="/chargers">Delhi</a></li>
                 <li><a class="dropdown-item" href="/mumbai">Mumbai</a></li>
                 <li><a class="dropdown-item" href="/bangalore">Bangalore</a></li>
               </ul>
@@ -53,86 +44,144 @@
       <h1>Welcome to Uni Charge</h1>
       <p>Find charging stations in {{city}}</p>
 
+      <!-- Filter Form -->
+      <form class="row g-3 mb-4" action="/" method="GET">
+        <div class="col-md-4">
+          <label for="vehicleType" class="form-label">Vehicle Type</label>
+          <select class="form-select" id="vehicleType" name="vehicleType" required>
+            <option value="2W">2-Wheeler</option>
+            <option value="3W">3-Wheeler</option>
+            <option value="4W">4-Wheeler</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="connector" class="form-label">Connector Type</label>
+          <select class="form-select" id="connector" name="connector" required>
+            <option value="BEVC AC 001">BEVC AC 001</option>
+            <option value="BEVC DC 001">BEVC DC 001</option>
+            <option value="CCS2">CCS2</option>
+            <option value="CHAdeMO">CHAdeMO</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="powerType" class="form-label">Power Type</label>
+          <select class="form-select" id="powerType" name="powerType" required>
+            <option value="AC">AC</option>
+            <option value="DC">DC</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label for="chargingSpeed" class="form-label">Min Charging Speed (kW)</label>
+          <input type="number" class="form-control" id="chargingSpeed" name="chargingSpeed" placeholder="e.g., 10" required />
+        </div>
+        <div class="col-md-6">
+          <label for="range" class="form-label">Search Radius (km)</label>
+          <input type="number" class="form-control" id="range" name="range" placeholder="e.g., 5" required />
+        </div>
+
+        <input type="hidden" id="userLat" name="userLat" />
+        <input type="hidden" id="userLng" name="userLng" />
+
+        <div class="col-12">
+          <button type="submit" class="btn btn-primary">Find Chargers</button>
+        </div>
+      </form>
+
       <!-- Map Container -->
       <div id="map"></div>
+
+      <!-- Results -->
+      {% if chargers %}
+        <h3 class="mt-4">Available Chargers Nearby</h3>
+        <ul class="list-group mt-2">
+          {% for charger in chargers %}
+            <li class="list-group-item">
+              <strong>{{ charger.name }}</strong><br/>
+              Connector: {{ charger.type }} | Power: {{ charger.power_type }} | Capacity: {{ charger.capacity }}<br/>
+              Distance: {{ charger.distance_km|floatformat:2 }} km
+            </li>
+          {% endfor %}
+        </ul>
+      {% elif request.GET %}
+        <p class="mt-4 text-danger">No chargers found matching your filters.</p>
+      {% endif %}
     </div>
 
-    <!-- Google Maps Script -->
+
     <script>
-        async function initMap() {
-            // Request needed libraries.
-            const { Map, InfoWindow } = await google.maps.importLibrary("maps");
-            const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary(
-              "marker",
-            );
-            const map = new Map(document.getElementById("map"), {
-              zoom: 12,
-              center: { lat: 34.84555, lng: -111.8035 },
-              mapId: "4504f8b37365c3d0",
-            });
-            // Set LatLng and title text for the markers. The first marker (Boynton Pass)
-            // receives the initial focus when tab is pressed. Use arrow keys to move
-            // between markers; press tab again to cycle through the map controls.
-            const tourStops = [
-              {
-                position: { lat: 34.8791806, lng: -111.8265049 },
-                title: "Boynton Pass",
-              },
-              {
-                position: { lat: 34.8559195, lng: -111.7988186 },
-                title: "Airport Mesa",
-              },
-              {
-                position: { lat: 34.832149, lng: -111.7695277 },
-                title: "Chapel of the Holy Cross",
-              },
-              {
-                position: { lat: 34.823736, lng: -111.8001857 },
-                title: "Red Rock Crossing",
-              },
-              {
-                position: { lat: 34.800326, lng: -111.7665047 },
-                title: "Bell Rock",
-              },
-            ];
-            // Create an info window to share between markers.
-            const infoWindow = new InfoWindow();
-          
-            // Create the markers.
-            tourStops.forEach(({ position, title }, i) => {
-              const pin = new PinElement({
-                glyph: `${i + 1}`,
-                scale: 1.5,
-              });
-              const marker = new AdvancedMarkerElement({
-                position,
-                map,
-                title: `${i + 1}. ${title}`,
-                content: pin.element,
-                gmpClickable: true,
-              });
-          
-              // Add a click listener for each marker, and set up the info window.
-              marker.addListener("click", ({ domEvent, latLng }) => {
-                const { target } = domEvent;
-          
-                infoWindow.close();
-                infoWindow.setContent(marker.title);
-                infoWindow.open(marker.map, marker);
-              });
-            });
-          }
-          
-          initMap();
+      // Geolocation for user
+      window.onload = function () {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function (position) {
+            document.getElementById("userLat").value = position.coords.latitude;
+            document.getElementById("userLng").value = position.coords.longitude;
+    
+            // Optional: You can also recenter the map if already loaded
+            if (window.mapInstance) {
+              const newCenter = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              };
+              window.mapInstance.setCenter(newCenter);
+            }
+          });
+        } else {
+          alert("Geolocation is not supported by your browser.");
+        }
+      };
     </script>
     
+    <!-- Google Maps Script -->
+    <script>
+      async function initMap() {
+        var location = {
+          lat: parseFloat(document.getElementById("userLat")?.value || {{ city_lat }}),
+          lng: parseFloat(document.getElementById("userLng")?.value || {{ city_long }})
+        };
+        
+        const { Map } = await google.maps.importLibrary("maps");
+        const { AdvancedMarkerElement , PinElement } = await google.maps.importLibrary("marker");
 
-    <!-- Load the Google Maps API with your API key -->
+        var map = new Map(document.getElementById("map"), {
+          zoom: 12,
+          center: location,
+          mapId: "441ce418f0f64e00",
+        });
+
+        var chargers = [
+          {% for charger in chargers %}
+            { lat: {{ charger.latitude }}, lng: {{ charger.longitude }} }{% if not forloop.last %},{% endif %}
+          {% endfor %}
+        ];
+
+        chargers.forEach((chargerLocation) => {
+          const pinBackground = new PinElement({
+            background: "#0000FF",
+            borderColor: "#FFFFFF",
+            glyphColor: "white",
+            scale: 0.7,
+          });
+
+          new AdvancedMarkerElement({
+            position: chargerLocation,
+            map: map,
+            title: "EV Charger",
+            content: pinBackground.element,
+          });
+        });
+
+        const pinscale = new PinElement({ scale: 0.5 });
+        new google.maps.Marker({
+          position: location,
+          map: map,
+          title: "You are here!",
+        });
+      }
+    </script>
+
     <script async defer
       src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap">
     </script>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   </body>
 </html>
